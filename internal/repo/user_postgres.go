@@ -18,8 +18,8 @@ func NewUserRepository(pg *postgres.Postgres) *userRepository {
 
 func (r *userRepository) Create(ctx context.Context, user *entity.User) (int64, error) {
 	row := r.pg.Pool.QueryRow(ctx,
-		"INSERT INTO users (username, is_admin, password_hash) VALUES($1, $2, $3) RETURNING id",
-		user.Username, user.IsAdmin, user.PasswordHash)
+		"INSERT INTO users (username, role, password_hash) VALUES($1, $2, $3) RETURNING id",
+		user.Username, user.Role, user.PasswordHash)
 
 	var id int64
 	if err := row.Scan(&id); err != nil {
@@ -37,23 +37,23 @@ func (r *userRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *userRepository) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
-	row := r.pg.Pool.QueryRow(ctx, "SELECT id, email, password, created_at FROM users WHERE username = $1", username)
+	row := r.pg.Pool.QueryRow(ctx, "SELECT id, username, role, password_hash, created_at FROM users WHERE username = $1", username)
 
 	var u entity.User
-	if err := row.Scan(&u.ID, &u.Username, &u.IsAdmin, &u.PasswordHash); err != nil {
+	if err := row.Scan(&u.ID, &u.Username, &u.Role, &u.PasswordHash, &u.CreatedAt); err != nil {
 		return nil, fmt.Errorf("UserRepository - GetByUsername - row.Scan(): %w", err)
 	}
 
 	return &u, nil
 }
 
-func (r *userRepository) IsAdmin(ctx context.Context, userID int64) (bool, error) {
-	row := r.pg.Pool.QueryRow(ctx, "SELECT id, email, password, created_at FROM users WHERE user_id = $1", userID)
+func (r *userRepository) GetRole(ctx context.Context, id int64) (string, error) {
+	row := r.pg.Pool.QueryRow(ctx, "SELECT role FROM users WHERE id = $1", id)
 
-	var b bool
-	if err := row.Scan(&b); err != nil {
-		return false, fmt.Errorf("UserRepository - IsAdmin - row.Scan(): %w", err)
+	var role string
+	if err := row.Scan(&role); err != nil {
+		return "", fmt.Errorf("UserRepository - GetRole - row.Scan(): %w", err)
 	}
 
-	return b, nil
+	return role, nil
 }

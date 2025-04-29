@@ -9,7 +9,9 @@ import (
 	"github.com/keshvan/auth-service-sstu-forum/config"
 	"github.com/keshvan/auth-service-sstu-forum/internal/controller"
 	"github.com/keshvan/auth-service-sstu-forum/internal/repo"
+	"github.com/keshvan/auth-service-sstu-forum/internal/usecase"
 	"github.com/keshvan/go-common-forum/httpserver"
+	"github.com/keshvan/go-common-forum/jwt"
 	"github.com/keshvan/go-common-forum/postgres"
 )
 
@@ -24,12 +26,15 @@ func Run(cfg *config.Config) {
 	userRepo := repo.NewUserRepository(pg)
 	tokenRepo := repo.NewRefreshTokenRepository(pg)
 
+	//JWT
+	jwt := jwt.New(cfg.Secret, cfg.AccessTTL, cfg.RefreshTTL)
+
 	//Usecase
-	userUsecase := usecase.New(userRepo)
+	authUsecase := usecase.NewAuthUsecase(userRepo, tokenRepo, jwt)
 
 	//HTTP-Server
-	httpServer := httpserver.New("localhost:3000")
-	controller.NewRouter(httpServer.Engine, userUsecase)
+	httpServer := httpserver.New(cfg.Server)
+	controller.NewRouter(httpServer.Engine, authUsecase, jwt)
 
 	httpServer.Run()
 	interrupt := make(chan os.Signal, 1)

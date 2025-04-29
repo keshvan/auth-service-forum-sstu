@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/keshvan/auth-service-sstu-forum/internal/entity"
+	authrequest "github.com/keshvan/auth-service-sstu-forum/internal/controller/request/auth_request"
 	"github.com/keshvan/auth-service-sstu-forum/internal/usecase"
 )
 
@@ -13,13 +14,13 @@ type AuthHandler struct {
 }
 
 func (ah *AuthHandler) Register(c *gin.Context) {
-	var req entity.RegisterRequest
+	var req authrequest.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	_, err := ah.usecase.Register(c, req.Username, req.IsAdmin, req.Password)
+	_, err := ah.usecase.Register(c.Request.Context(), req.Username, req.Role, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -29,41 +30,55 @@ func (ah *AuthHandler) Register(c *gin.Context) {
 }
 
 func (ah *AuthHandler) Login(c *gin.Context) {
-	var req entity.LoginRequest
+	var req authrequest.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	tokens, err := ah.usecase.Login(c, req.Username, req.Password)
+
+	tokens, err := ah.usecase.Login(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
-	c.SetCookie(
-		"refresh_token",
-		tokens.RefreshToken,
-		30*86400,
-		"/",
-		"",
-		false,
-		true,
-	)
-
-	c.JSON(http.StatusOK, tokens.AccessToken)
+	c.JSON(http.StatusOK, gin.H{"tokens": tokens})
 }
 
 func (ah *AuthHandler) Refresh(c *gin.Context) {
-	refreshToken, err := c.Cookie("refresh_token")
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "no refresh token"})
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token required"})
 		return
 	}
 
-	tokens, err := ah.usecase.Refresh(c.Request.Context(), refreshToken)
+	tokens, err := ah.usecase.Refresh(c.Request.Context(), req.RefreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
 		return
 	}
-	c.JSON(http.StatusOK, tokens.AccessToken)
+
+	c.JSON(http.StatusOK, gin.H{"tokens": tokens})
+}
+
+func (ah *AuthHandler) Logout(c *gin.Context) {
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token required"})
+		return
+	}
+
+	if err := ah.usecase.Logout(c.Request.Context(), req.RefreshToken); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to logout"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }

@@ -16,7 +16,7 @@ func NewRefreshTokenRepository(pg *postgres.Postgres) *refreshTokenRepository {
 }
 
 func (r *refreshTokenRepository) Save(ctx context.Context, token string, userID int64) error {
-	if _, err := r.pg.Pool.Exec(ctx, "INSERT INTO refresh_tokens (token, user_id) VALUES($1, $2)"); err != nil {
+	if _, err := r.pg.Pool.Exec(ctx, "INSERT INTO refresh_tokens (token, user_id) VALUES($1, $2)", token, userID); err != nil {
 		return fmt.Errorf("RefreshTokenRepository - Save - pg.Pool.Exec(): %w", err)
 	}
 	return nil
@@ -25,6 +25,13 @@ func (r *refreshTokenRepository) Save(ctx context.Context, token string, userID 
 func (r *refreshTokenRepository) Delete(ctx context.Context, token string) error {
 	if _, err := r.pg.Pool.Exec(ctx, `DELETE FROM refresh_tokens WHERE token = $1`, token); err != nil {
 		return fmt.Errorf("RefreshTokenRepository - Delete - pg.Pool.Exec(): %w", err)
+	}
+	return nil
+}
+
+func (r *refreshTokenRepository) DeleteByUserID(ctx context.Context, userID int64) error {
+	if _, err := r.pg.Pool.Exec(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID); err != nil {
+		return fmt.Errorf("RefreshTokenRepository - DeleteByUserID - pg.Pool.Exec(): %w", err)
 	}
 	return nil
 }

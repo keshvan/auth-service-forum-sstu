@@ -1,0 +1,10 @@
+env: "local"
+pg_url: "postgres://postgres:123456@localhost:5432/forum"
+access_ttl: 10h
+refresh_ttl: 10h
+log_level: "debug"
+server: "localhost:3001"
+grpc:
+  port: 44044
+  timeout: 10h
+secret: "minions-gang"

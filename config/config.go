@@ -9,10 +9,13 @@ import (
 )
 
 type Config struct {
-	Env      string        `yaml:"env" env-default:"local"`
-	PG_URL   string        `yaml:"pg_url"`
-	TokenTTL time.Duration `yaml:"token_ttl" env-required:"true"`
-	Log      string        `yaml:"log_level"`
+	Env        string        `yaml:"env" env-default:"local"`
+	PG_URL     string        `yaml:"pg_url"`
+	AccessTTL  time.Duration `yaml:"access_ttl"`
+	RefreshTTL time.Duration `yaml:"refresh_ttl" env-required:"true"`
+	Log        string        `yaml:"log_level"`
+	Server     string        `yaml:"server"`
+	Secret     string        `yaml:"secret"`
 }
 
 /*type GRPCConfig struct {
