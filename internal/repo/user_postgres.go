@@ -12,7 +12,7 @@ type userRepository struct {
 	pg *postgres.Postgres
 }
 
-func NewUserRepository(pg *postgres.Postgres) *userRepository {
+func NewUserRepository(pg *postgres.Postgres) UserRepository {
 	return &userRepository{pg}
 }
 

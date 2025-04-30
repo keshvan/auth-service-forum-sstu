@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +37,6 @@ func (ah *AuthHandler) Login(c *gin.Context) {
 
 	tokens, err := ah.usecase.Login(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}

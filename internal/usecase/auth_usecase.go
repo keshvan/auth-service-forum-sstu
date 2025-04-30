@@ -19,7 +19,7 @@ type authUsecase struct {
 	jwt       *jwt.JWT
 }
 
-func NewAuthUsecase(userRepo repo.UserRepository, tokenRepo repo.RefreshTokenRepository, jwt *jwt.JWT) *authUsecase {
+func NewAuthUsecase(userRepo repo.UserRepository, tokenRepo repo.RefreshTokenRepository, jwt *jwt.JWT) AuthUsecase {
 	return &authUsecase{userRepo: userRepo, tokenRepo: tokenRepo, jwt: jwt}
 }
 
