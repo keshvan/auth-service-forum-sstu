@@ -11,6 +11,7 @@ type (
 		Create(ctx context.Context, user *entity.User) (int64, error)
 		Delete(ctx context.Context, id int64) error
 		GetByUsername(ctx context.Context, username string) (*entity.User, error)
+		GetByID(ctx context.Context, id int64) (*entity.User, error)
 		GetRole(ctx context.Context, id int64) (string, error)
 	}
 

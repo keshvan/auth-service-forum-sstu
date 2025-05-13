@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -12,10 +13,14 @@ import (
 	"github.com/keshvan/auth-service-sstu-forum/internal/usecase"
 	"github.com/keshvan/go-common-forum/httpserver"
 	"github.com/keshvan/go-common-forum/jwt"
+	"github.com/keshvan/go-common-forum/logger"
 	"github.com/keshvan/go-common-forum/postgres"
 )
 
 func Run(cfg *config.Config) {
+	//Logger
+	logger := logger.New("auth-service", cfg.LogLevel)
+
 	//Repository
 	pg, err := postgres.New(cfg.PG_URL)
 	if err != nil {
@@ -23,18 +28,19 @@ func Run(cfg *config.Config) {
 	}
 	defer pg.Close()
 
-	userRepo := repo.NewUserRepository(pg)
-	tokenRepo := repo.NewRefreshTokenRepository(pg)
+	userRepo := repo.NewUserRepository(pg, logger)
+	tokenRepo := repo.NewRefreshTokenRepository(pg, logger)
 
 	//JWT
+	fmt.Println(cfg.AccessTTL, cfg.RefreshTTL)
 	jwt := jwt.New(cfg.Secret, cfg.AccessTTL, cfg.RefreshTTL)
 
 	//Usecase
-	authUsecase := usecase.NewAuthUsecase(userRepo, tokenRepo, jwt)
+	authUsecase := usecase.NewAuthUsecase(userRepo, tokenRepo, jwt, logger)
 
 	//HTTP-Server
 	httpServer := httpserver.New(cfg.Server)
-	controller.NewRouter(httpServer.Engine, authUsecase, jwt)
+	controller.NewRouter(httpServer.Engine, authUsecase, jwt, logger)
 
 	httpServer.Run()
 	interrupt := make(chan os.Signal, 1)
