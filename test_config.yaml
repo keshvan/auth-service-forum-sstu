@@ -1,0 +1,7 @@
+env: "test"
+pg_url: "postgres://postgres:123456@localhost:5432/test_auth"
+access_ttl: 1m 
+refresh_ttl: 5m 
+server: ":0"
+secret: "test_key_for_integr_tests"
+log_level: "debug"

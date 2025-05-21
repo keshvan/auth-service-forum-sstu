@@ -135,8 +135,7 @@ func (s *AuthUsecaseSuite) TestRegister_GetUserAfterCreateError() {
 	s.userRepo.AssertExpectations(s.T())
 }
 
-//Login
-
+// Login
 func (s *AuthUsecaseSuite) TestLogin_Success() {
 	ctx := context.Background()
 	username := "user"
@@ -304,10 +303,8 @@ func (s *AuthUsecaseSuite) TestRefresh_Success() {
 	role := "admin"
 	refreshToken, _ := s.jwt.GenerateRefreshToken(userID)
 	<-time.After(time.Second * 1)
-	expectedUser := &entity.User{ID: userID, Username: "refresher", Role: role, CreatedAt: time.Now()}
 
 	s.tokenRepo.On("GetUserID", ctx, refreshToken).Return(userID, nil).Once()
-	s.userRepo.On("GetByID", ctx, userID).Return(expectedUser, nil).Once()
 	s.tokenRepo.On("Delete", ctx, refreshToken).Return(nil).Once()
 	s.userRepo.On("GetRole", ctx, userID).Return(role, nil).Once()
 	s.tokenRepo.On("Save", ctx, mock.AnythingOfType("string"), userID).Return(nil).Once()
@@ -316,8 +313,6 @@ func (s *AuthUsecaseSuite) TestRefresh_Success() {
 	fmt.Println(refreshToken, resp.Tokens.RefreshToken)
 	s.NoError(err)
 	s.NotNil(resp)
-	s.Equal(expectedUser.ID, resp.User.ID)
-	s.Equal(expectedUser.Username, resp.User.Username)
 	s.NotEmpty(resp.Tokens.AccessToken)
 	s.NotEmpty(resp.Tokens.RefreshToken)
 	s.NotEqual(refreshToken, resp.Tokens.RefreshToken)
@@ -382,37 +377,13 @@ func (s *AuthUsecaseSuite) TestRefresh_UserIDMismatch() {
 	s.tokenRepo.AssertNotCalled(s.T(), "Save")
 }
 
-func (s *AuthUsecaseSuite) TestRefresh_GetUserError() {
-	ctx := context.Background()
-	userID := int64(1)
-	refreshToken, _ := s.jwt.GenerateRefreshToken(userID)
-	expectedError := errors.New("db error get user")
-
-	s.tokenRepo.On("GetUserID", ctx, refreshToken).Return(userID, nil).Once()
-	s.userRepo.On("GetByID", ctx, userID).Return(nil, expectedError).Once()
-
-	resp, err := s.usecase.Refresh(ctx, refreshToken)
-
-	s.Error(err)
-	s.Nil(resp)
-	s.Contains(err.Error(), "failed to get user by ID")
-	s.ErrorIs(err, expectedError)
-	s.tokenRepo.AssertExpectations(s.T())
-	s.userRepo.AssertExpectations(s.T())
-	s.tokenRepo.AssertNotCalled(s.T(), "Delete")
-	s.tokenRepo.AssertNotCalled(s.T(), "Save")
-}
-
 func (s *AuthUsecaseSuite) TestRefresh_DeleteTokenError() {
 	ctx := context.Background()
 	userID := int64(1)
-	role := "admin"
 	refreshToken, _ := s.jwt.GenerateRefreshToken(userID)
-	expectedUser := &entity.User{ID: userID, Username: "refresher", Role: role}
 	expectedError := errors.New("db error delete token")
 
 	s.tokenRepo.On("GetUserID", ctx, refreshToken).Return(userID, nil).Once()
-	s.userRepo.On("GetByID", ctx, userID).Return(expectedUser, nil).Once()
 	s.tokenRepo.On("Delete", ctx, refreshToken).Return(expectedError).Once()
 
 	resp, err := s.usecase.Refresh(ctx, refreshToken)
@@ -430,13 +401,10 @@ func (s *AuthUsecaseSuite) TestRefresh_DeleteTokenError() {
 func (s *AuthUsecaseSuite) TestRefresh_GetRoleError() {
 	ctx := context.Background()
 	userID := int64(1)
-	role := "admin"
 	refreshToken, _ := s.jwt.GenerateRefreshToken(userID)
-	expectedUser := &entity.User{ID: userID, Username: "refresher", Role: role}
 	expectedError := errors.New("db error get role")
 
 	s.tokenRepo.On("GetUserID", ctx, refreshToken).Return(userID, nil).Once()
-	s.userRepo.On("GetByID", ctx, userID).Return(expectedUser, nil).Once()
 	s.tokenRepo.On("Delete", ctx, refreshToken).Return(nil).Once()
 	s.userRepo.On("GetRole", ctx, userID).Return("", expectedError).Once()
 
@@ -456,11 +424,9 @@ func (s *AuthUsecaseSuite) TestRefresh_SaveNewTokenError() {
 	userID := int64(1)
 	role := "admin"
 	refreshToken, _ := s.jwt.GenerateRefreshToken(userID)
-	expectedUser := &entity.User{ID: userID, Username: "refresher", Role: role}
 	expectedError := errors.New("db error save new token")
 
 	s.tokenRepo.On("GetUserID", ctx, refreshToken).Return(userID, nil).Once()
-	s.userRepo.On("GetByID", ctx, userID).Return(expectedUser, nil).Once()
 	s.tokenRepo.On("Delete", ctx, refreshToken).Return(nil).Once()
 	s.userRepo.On("GetRole", ctx, userID).Return(role, nil).Once()
 	s.tokenRepo.On("Save", ctx, mock.AnythingOfType("string"), userID).Return(expectedError).Once()
@@ -558,7 +524,7 @@ func (s *AuthUsecaseSuite) TestIsSessionActive_Inactive_EmptyToken() {
 func (s *AuthUsecaseSuite) TestIsSessionActive_GetUserIDError() {
 	ctx := context.Background()
 	refreshToken := "active-token"
-	expectedError := errors.New("db error get user id") // Любая ошибка, кроме ErrNoRows
+	expectedError := errors.New("db error get user id")
 
 	s.tokenRepo.On("GetUserID", ctx, refreshToken).Return(int64(0), expectedError).Once()
 

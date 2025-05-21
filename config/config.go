@@ -35,3 +35,16 @@ func NewConfig() (*Config, error) {
 
 	return cfg, nil
 }
+
+func NewTestConfig() (*Config, error) {
+	cfg := &Config{}
+	file, err := os.ReadFile("./test_config.yaml")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+	if err := yaml.Unmarshal(file, cfg); err != nil {
+		return nil, fmt.Errorf("config error: %w", err)
+	}
+
+	return cfg, nil
+}

@@ -23,6 +23,17 @@ const (
 	checkSessionOp = "AuthHandler.CheckSession"
 )
 
+// Register godoc
+// @Summary Register a new user
+// @Description Creates a new user account and returns user information along with an access token. A refresh token is set as an HTTP-only cookie.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body authrequest.RegisterRequest true "User Credentials"
+// @Success 200 {object} authresponse.RegisterSuccessResponse "Successfully registered"
+// @Failure 400 {object} authresponse.ErrorResponse "Invalid request payload"
+// @Failure 500 {object} authresponse.ErrorResponse "Internal server error"
+// @Router /register [post]
 func (ah *AuthHandler) Register(c *gin.Context) {
 	log := ah.getRequestLogger(c).With().Str("op", registerOp).Logger()
 
@@ -45,6 +56,17 @@ func (ah *AuthHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": res.User, "access_token": res.Tokens.AccessToken})
 }
 
+// Login godoc
+// @Summary Log in an existing user
+// @Description Authenticates a user and returns user information along with a new access token. A new refresh token is set as an HTTP-only cookie, and any existing refresh token in the cookie is invalidated.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body authrequest.LoginRequest true "User Login Credentials"
+// @Success 200 {object} authresponse.LoginSuccessResponse "Successfully logged in"
+// @Failure 400 {object} authresponse.ErrorResponse "Invalid request payload"
+// @Failure 401 {object} authresponse.ErrorResponse "Invalid credentials"
+// @Router /login [post]
 func (ah *AuthHandler) Login(c *gin.Context) {
 	log := ah.getRequestLogger(c).With().Str("op", loginOp).Logger()
 
@@ -52,6 +74,7 @@ func (ah *AuthHandler) Login(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Warn().Err(err).Msg("Failed to bind request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println("ошибка")
 		return
 	}
 
@@ -77,6 +100,14 @@ func (ah *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": res.User, "access_token": res.Tokens.AccessToken})
 }
 
+// Refresh godoc
+// @Summary Refresh access token
+// @Description Uses a refresh token to generate a new access token and a new refresh token. Refresh token is set as an HTTP-only cookie.
+// @Tags auth
+// @Produce json
+// @Success 200 {object} authresponse.RefreshSuccessResponse "Successfully refreshed tokens"
+// @Failure 401 {object} authresponse.ErrorResponse "Refresh token required or invalid/expired refresh token"
+// @Router /refresh [post]
 func (ah *AuthHandler) Refresh(c *gin.Context) {
 	log := ah.getRequestLogger(c).With().Str("op", refreshOp).Logger()
 
@@ -96,9 +127,16 @@ func (ah *AuthHandler) Refresh(c *gin.Context) {
 	}
 
 	c.SetCookie("refresh_token", tokens.Tokens.RefreshToken, 3600*24*30, "/", "", false, true)
-	c.JSON(http.StatusOK, gin.H{"user": tokens.User, "access_token": tokens.Tokens.AccessToken})
+	c.JSON(http.StatusOK, gin.H{"access_token": tokens.Tokens.AccessToken})
 }
 
+// Logout godoc
+// @Summary Log out a user
+// @Description Logs out a user by deleting the refresh token from the server and clearing the refresh token cookie.
+// @Tags auth
+// @Produce json
+// @Success 200 {object} authresponse.LogoutSuccessResponse "Successfully logged out"
+// @Router /logout [post]
 func (ah *AuthHandler) Logout(c *gin.Context) {
 	log := ah.getRequestLogger(c).With().Str("op", logoutOp).Logger()
 	refreshToken, err := c.Cookie("refresh_token")

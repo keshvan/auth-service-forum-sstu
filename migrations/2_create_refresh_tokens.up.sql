@@ -1,4 +1,4 @@
 CREATE TABLE IF NOT EXISTS refresh_tokens (
 	token TEXT PRIMARY KEY,
-	user_id INT REFERENCES users(id) ON DELETE CASCADE,
+	user_id INT REFERENCES users(id) ON DELETE CASCADE
 );

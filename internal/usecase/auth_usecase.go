@@ -139,12 +139,6 @@ func (u *authUsecase) Refresh(ctx context.Context, refreshToken string) (*authre
 		return nil, errors.New("user_id mismatch in refresh token")
 	}
 
-	user, err := u.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		log.Error().Err(err).Int64("user_id", userID).Msg("Failed to get user by ID")
-		return nil, fmt.Errorf("failed to get user by ID: %w", err)
-	}
-
 	if err := u.tokenRepo.Delete(ctx, refreshToken); err != nil {
 		log.Error().Err(err).Int64("user_id", userID).Msg("Failed to delete used refresh token from repository")
 		return nil, fmt.Errorf("failed to delete used refresh token: %w", err)
@@ -175,7 +169,7 @@ func (u *authUsecase) Refresh(ctx context.Context, refreshToken string) (*authre
 	}
 
 	log.Info().Str("op", refreshOp).Int64("user_id", userID).Msg("User refreshed successfully")
-	return &authresponse.RefreshResponse{User: *user, Tokens: authresponse.Tokens{AccessToken: newAccess, RefreshToken: newRefresh}}, nil
+	return &authresponse.RefreshResponse{Tokens: authresponse.Tokens{AccessToken: newAccess, RefreshToken: newRefresh}}, nil
 }
 
 func (u *authUsecase) Logout(ctx context.Context, refreshToken string) error {
@@ -194,7 +188,6 @@ func (u *authUsecase) IsSessionActive(ctx context.Context, refreshToken string) 
 	if refreshToken == "" {
 		return &authresponse.IsSessionActiveResponse{User: nil, IsActive: false}, nil
 	}
-
 	id, err := u.tokenRepo.GetUserID(ctx, refreshToken)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -27,6 +28,10 @@ func Run(cfg *config.Config) {
 		log.Fatalf("app - Run - postgres.New")
 	}
 	defer pg.Close()
+
+	if err := pg.RunMigrations(context.Background(), "migrations"); err != nil {
+		log.Fatalf("app - Run - pg.RunMigrations: %v", err)
+	}
 
 	userRepo := repo.NewUserRepository(pg, logger)
 	tokenRepo := repo.NewRefreshTokenRepository(pg, logger)
